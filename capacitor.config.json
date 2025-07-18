@@ -1,0 +1,13 @@
+{
+  "appId": "com.example.photoapp",
+  "appName": "photo-app",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "camera": {
+      "permissionType": "CAMERA"
+    },
+    "filesystem": {},
+    "storage": {}
+  }
+}
