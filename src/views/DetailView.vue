@@ -1,69 +1,57 @@
-<script setup lang="ts">
-import {
-  IonPage,
-  IonHeader,
-  IonToolbar,
-  IonButtons,
-  IonBackButton,
-  IonTitle,
-  IonContent,
-  IonButton,
-} from '@ionic/vue';
-import { useRoute, useRouter } from 'vue-router';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { PhotoEditor } from '@capawesome/capacitor-photo-editor';
-import { isPlatform, onIonViewWillEnter } from '@ionic/vue';
-import { ref } from 'vue';
-
-const route = useRoute();
-const router = useRouter();
-const id = route.params.id as string;
-
-// Foto aus LocalStorage ziehen
-const photo = ref(
-    JSON.parse(localStorage.getItem('photos') || '[]').find((p: any) => p.id === id)
-);
-
-// beim Betreten neu laden, falls geändert
-onIonViewWillEnter(() => {
-  const fresh = JSON.parse(localStorage.getItem('photos') || '[]').find((p: any) => p.id === id);
-  if (fresh) photo.value = fresh;
-});
-
-async function deletePhoto() {
-  await Filesystem.deleteFile({ path: photo.value.filepath, directory: Directory.Data });
-  const photos = JSON.parse(localStorage.getItem('photos') || '[]').filter((p: any) => p.id !== id);
-  localStorage.setItem('photos', JSON.stringify(photos));
-  router.back();
-}
-
-async function editPhoto() {
-  if (!isPlatform('android')) return;
-
-  // neue API ab v7
-  await PhotoEditor.editPhoto({ path: photo.value.filepath });
-
-  // geändertes Bild nach dem Speichern erneut laden
-  const updated = JSON.parse(localStorage.getItem('photos') || '[]').find((p: any) => p.id === id);
-  if (updated) photo.value = updated;
-}
-</script>
-
 <template>
   <IonPage>
     <IonHeader>
       <IonToolbar>
-        <IonButtons slot="start"><IonBackButton defaultHref="/" /></IonButtons>
-        <IonTitle>Foto</IonTitle>
+        <IonTitle>Detail</IonTitle>
+        <IonButtons slot="end">
+          <IonButton @click="editPhoto">Bearbeiten</IonButton>
+          <IonButton color="danger" @click="deletePhoto">Löschen</IonButton>
+        </IonButtons>
       </IonToolbar>
     </IonHeader>
-
-    <IonContent class="ion-padding">
-      <img :src="photo.webviewPath" style="width: 100%; border-radius: 8px;" />
-      <div class="ion-text-center ion-margin-top">
-        <IonButton expand="block" @click="editPhoto">Bearbeiten</IonButton>
-        <IonButton color="danger" expand="block" @click="deletePhoto">Löschen</IonButton>
-      </div>
+    <IonContent>
+      <IonImg :src="photoSrc" />
     </IonContent>
   </IonPage>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonImg } from '@ionic/vue';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { PhotoEditor } from '@capawesome/capacitor-photo-editor';
+
+const route = useRoute();
+const router = useRouter();
+const id = route.params.id as string;
+const photoSrc = ref<string>('');
+let filepath = '';
+
+async function loadPhoto() {
+  const list = JSON.parse(localStorage.getItem('photos') || '[]');
+  const photo = list.find((p: any) => p.id === id);
+  filepath = photo.filepath;
+  const uri = await Filesystem.getUri({ path: filepath, directory: Directory.Data });
+  photoSrc.value = uri.uri;
+}
+
+async function deletePhoto() {
+  await Filesystem.deleteFile({ path: filepath, directory: Directory.Data });
+  let list = JSON.parse(localStorage.getItem('photos') || '[]');
+  list = list.filter((p: any) => p.id !== id);
+  localStorage.setItem('photos', JSON.stringify(list));
+  router.push('/');
+}
+
+async function editPhoto() {
+  const uri = (await Filesystem.getUri({ path: filepath, directory: Directory.Data })).uri;
+  await PhotoEditor.editPhoto({
+    path: uri,
+  });
+  // ggf. neues Bild überschreiben oder aktualisieren
+  await loadPhoto();
+}
+
+onMounted(loadPhoto);
+</script>

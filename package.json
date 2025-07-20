@@ -27,6 +27,7 @@
     "@ionic/vue": "^8.0.0",
     "@ionic/vue-router": "^8.0.0",
     "ionicons": "^7.0.0",
+    "uuid": "^11.1.0",
     "vue": "^3.3.0",
     "vue-router": "^4.5.1"
   },
