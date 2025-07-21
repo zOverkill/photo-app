@@ -1,13 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Photo App</title>
-    <link rel="stylesheet" href="./style.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Test App</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        header {
+            background-color: #3880ff;
+            color: white;
+            padding: 16px;
+            margin: -20px -20px 20px -20px;
+        }
+        h1 { margin: 0; }
+        #message {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
 <body>
-<div id="app"></div>
-<script type="module" src="/src/main.js"></script>
+<header>
+    <h1>Test App</h1>
+</header>
+<div id="message">
+    <p>Diese Seite wird korrekt angezeigt!</p>
+</div>
+
+<script>
+    // Einfaches Script, das nur Ausgaben erzeugt
+    console.log("Test-Seite wurde geladen!");
+    document.addEventListener('deviceready', function() {
+        console.log("Capacitor ist bereit!");
+    }, false);
+</script>
 </body>
 </html>
