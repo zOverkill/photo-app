@@ -2,25 +2,30 @@
   <IonPage>
     <IonHeader>
       <IonToolbar>
-        <IonTitle>Galerie</IonTitle>
+        <IonTitle class="home-title">Fotos</IonTitle>
       </IonToolbar>
     </IonHeader>
-    <IonContent>
+    <IonContent :fullscreen="true">
       <div v-if="!appReady" class="loading-container">
         <p>Wird geladen...</p>
       </div>
+
       <template v-if="appReady">
-        <IonGrid v-if="photos.length > 0">
-          <IonRow>
-            <IonCol size="4" v-for="photo in photos" :key="photo.id">
-              <IonImg :src="getPhotoSrc(photo.filepath)" @click="openDetail(photo.id)" />
-            </IonCol>
-          </IonRow>
-        </IonGrid>
-        <div v-else class="empty-gallery">
+        <div v-for="(photoGroup, date) in groupedPhotos" :key="date" class="photo-group">
+          <h2 class="date-header">{{ date }}</h2>
+          <IonGrid :fixed="true">
+            <IonRow>
+              <IonCol size="4" v-for="photo in photoGroup" :key="photo.id">
+                <IonImg :src="getPhotoSrc(photo.filepath)" @click="openDetail(photo.id)" />
+              </IonCol>
+            </IonRow>
+          </IonGrid>
+        </div>
+        <div v-if="photos.length === 0" class="empty-gallery">
           <p>Noch keine Fotos vorhanden. Machen Sie Ihr erstes Foto!</p>
         </div>
       </template>
+
       <IonFab vertical="bottom" horizontal="end" slot="fixed">
         <IonFabButton @click="takePhoto">
           <IonIcon :icon="camera" />
@@ -31,11 +36,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonGrid, IonRow, IonCol,
-  IonImg, IonFab, IonFabButton, IonIcon, isPlatform, onIonViewWillEnter
+  IonImg, IonFab, IonFabButton, IonIcon, onIonViewWillEnter
 } from '@ionic/vue';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -50,8 +55,36 @@ const photos = ref<Photo[]>([]);
 interface Photo {
   id: string;
   filepath: string;
-  webviewPath?: string;
+  createdAt: number;
 }
+
+const groupedPhotos = computed(() => {
+  const groups: { [key: string]: Photo[] } = {};
+  const sortedPhotos = [...photos.value].sort((a, b) => b.createdAt - a.createdAt);
+
+  sortedPhotos.forEach(photo => {
+    const date = new Date(photo.createdAt);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    let dayKey = '';
+
+    if (date.toDateString() === today.toDateString()) {
+      dayKey = `Heute - ${date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      dayKey = `Gestern - ${date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+    } else {
+      dayKey = date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    if (!groups[dayKey]) {
+      groups[dayKey] = [];
+    }
+    groups[dayKey].push(photo);
+  });
+
+  return groups;
+});
 
 function getPhotoSrc(filepath: string): string {
   return Capacitor.convertFileSrc(filepath);
@@ -101,7 +134,8 @@ async function takePhoto() {
 
     photos.value.unshift({
       id: uuidv4(),
-      filepath: savedFile.uri
+      filepath: savedFile.uri,
+      createdAt: Date.now()
     });
 
     savePhotosState();
@@ -126,11 +160,32 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.home-title {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+ion-fab-button {
+  --width: 70px;
+  --height: 70px;
+  margin: 16px;
+}
+
+ion-fab-button ion-icon {
+  font-size: 36px;
+}
+
+ion-grid {
+  --ion-grid-padding: 0;
+  --ion-grid-column-padding: 1px;
+}
+
 ion-img {
   width: 100%;
-  height: 100px;
+  height: 33vw;
   object-fit: cover;
   cursor: pointer;
+  border-radius: 12px;
 }
 
 .loading-container, .empty-gallery {
@@ -142,5 +197,12 @@ ion-img {
   color: #666;
   text-align: center;
   padding: 20px;
+}
+
+.date-header {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin: 24px 0 12px 16px;
 }
 </style>
