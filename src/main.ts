@@ -11,7 +11,10 @@ import '@ionic/vue/css/typography.css';
 import '@ionic/vue/css/ionic.bundle.css';
 import './theme/variables.css';
 
-createApp(App)
+const app = createApp(App)
     .use(IonicVue)
-    .use(router)
-    .mount('#app');
+    .use(router);
+
+router.isReady().then(() => {
+    app.mount('#app');
+});

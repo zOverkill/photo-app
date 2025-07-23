@@ -6,25 +6,26 @@
       </IonToolbar>
     </IonHeader>
     <IonContent>
-      <!-- Sofort sichtbare Minimal-UI -->
       <div v-if="!appReady" class="loading-container">
         <p>Wird geladen...</p>
       </div>
 
-      <!-- Eigentlicher Inhalt, nur angezeigt wenn appReady=true -->
       <template v-if="appReady">
         <IonGrid v-if="photos.length > 0">
           <IonRow>
             <IonCol size="4" v-for="photo in photos" :key="photo.id">
-              <IonImg :src="getPhotoSrc(photo.filepath)" />
+              <IonImg :src="getPhotoSrc(photo.filepath)" @click="openDetail(photo.id)" />
             </IonCol>
           </IonRow>
         </IonGrid>
+        <div v-else class="empty-gallery">
+          <p>Noch keine Fotos vorhanden. Machen Sie Ihr erstes Foto!</p>
+        </div>
       </template>
 
       <IonFab vertical="bottom" horizontal="end" slot="fixed">
         <IonFabButton @click="takePhoto">
-          <IonIcon name="camera" />
+          <IonIcon :icon="camera" />
         </IonFabButton>
       </IonFab>
     </IonContent>
@@ -32,15 +33,20 @@
 </template>
 
 <script setup lang="ts">
-import {ref, onMounted, nextTick} from 'vue';
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonGrid, IonRow, IonCol,
   IonImg, IonFab, IonFabButton, IonIcon, isPlatform
 } from '@ionic/vue';
+// HIER IST DIE KORREKTUR: PermissionState -> PermissionStatus
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { v4 as uuidv4 } from 'uuid';
+import { camera } from 'ionicons/icons';
+
+const router = useRouter();
 
 // Initialisierungszustand
 const appReady = ref(false);
@@ -67,7 +73,23 @@ async function loadPhotos() {
   try {
     const raw = localStorage.getItem('photos');
     if (raw) {
-      photos.value = JSON.parse(raw);
+      const loadedPhotos: Photo[] = JSON.parse(raw);
+      // Validieren, dass die Dateien noch existieren
+      const validPhotos: Photo[] = [];
+      for (const photo of loadedPhotos) {
+        try {
+          // Wir prüfen nur, ob die URI noch gültig ist. Eine volle Dateiprüfung ist zu aufwändig.
+          if (photo.filepath) {
+            validPhotos.push(photo);
+          }
+        } catch (e) {
+          console.warn(`Datei für Foto ${photo.id} nicht gefunden, wird entfernt.`);
+        }
+      }
+      photos.value = validPhotos;
+      if(validPhotos.length !== loadedPhotos.length) {
+        savePhotosState(); // Bereinigte Liste speichern
+      }
     }
   } catch (e) {
     console.error("Fehler beim Laden der Fotos aus localStorage", e);
@@ -77,10 +99,15 @@ async function loadPhotos() {
 
 async function takePhoto() {
   try {
-    const perm = await Camera.checkPermissions();
-    if (perm.camera !== 'granted') {
-      const requestPerm = await Camera.requestPermissions();
-      if (requestPerm.camera !== 'granted') return;
+    // Überprüfen und Anfordern der Berechtigungen in einem Schritt
+    const permissions = await Camera.requestPermissions({
+      permissions: ['camera', 'photos']
+    });
+
+    if (permissions.camera !== 'granted' || permissions.photos !== 'granted') {
+      console.error('Kamera- oder Speicherberechtigung verweigert.');
+      // Optional: Dem Benutzer eine Nachricht anzeigen
+      return;
     }
 
     const image = await Camera.getPhoto({
@@ -92,6 +119,7 @@ async function takePhoto() {
     if (!image.path) return;
 
     const fileName = `${uuidv4()}.jpeg`;
+    // Kopiere das Bild vom temporären Kamera-Pfad in das persistente Datenverzeichnis der App
     const savedFile = await Filesystem.copy({
       from: image.path,
       to: fileName,
@@ -100,7 +128,7 @@ async function takePhoto() {
 
     photos.value.unshift({
       id: uuidv4(),
-      filepath: savedFile.uri
+      filepath: savedFile.uri // Die persistente URI speichern
     });
 
     savePhotosState();
@@ -109,12 +137,16 @@ async function takePhoto() {
   }
 }
 
+function openDetail(photoId: string) {
+  router.push(`/detail/${photoId}`);
+}
+
 // Zweistufiges Bootstrap-Verfahren
 onMounted(() => {
   // Sofort einen sichtbaren DOM-Baum erzeugen
   console.log("App gestartet - Loading-Screen anzeigen");
 
-  // Verzögere alle App-Logik mit setTimeout (0ms reicht)
+  // Verzögere alle App-Logik mit setTimeout
   setTimeout(() => {
     console.log("Starte App-Initialisierung");
 
@@ -131,16 +163,19 @@ onMounted(() => {
 <style scoped>
 ion-img {
   width: 100%;
-  height: 100%;
+  height: 100px; /* Feste Höhe für einheitliche Kacheln */
   object-fit: cover;
+  cursor: pointer;
 }
 
-.loading-container {
+.loading-container, .empty-gallery {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100%;
-  font-size: 20px;
+  font-size: 18px;
   color: #666;
+  text-align: center;
+  padding: 20px;
 }
 </style>
