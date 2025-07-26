@@ -1,13 +1,12 @@
-import { defineConfig } from 'cypress';
+const { defineConfig } = require('cypress');
 
-export default defineConfig({
+module.exports = defineConfig({
   e2e: {
-    supportFile: 'tests/e2e/support/e2e.{js,jsx,ts,tsx}',
+    supportFile: 'tests/e2e/support/e2e.ts',
     specPattern: 'tests/e2e/specs/**/*.cy.{js,jsx,ts,tsx}',
     videosFolder: 'tests/e2e/videos',
     screenshotsFolder: 'tests/e2e/screenshots',
     baseUrl: 'http://localhost:5173',
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },

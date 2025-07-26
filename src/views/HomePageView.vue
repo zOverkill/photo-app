@@ -36,11 +36,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, defineExpose } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonGrid, IonRow, IonCol,
-  IonImg, IonFab, IonFabButton, IonIcon, onIonViewWillEnter
+  IonImg, IonFab, IonFabButton, IonIcon, isPlatform, onIonViewWillEnter
 } from '@ionic/vue';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Filesystem, Directory } from '@capacitor/filesystem';
@@ -51,6 +51,9 @@ import { camera } from 'ionicons/icons';
 const router = useRouter();
 const appReady = ref(false);
 const photos = ref<Photo[]>([]);
+
+// ANPASSUNG: Die 'photos' Variable wird für Tests verfügbar gemacht
+defineExpose({ photos });
 
 interface Photo {
   id: string;
