@@ -46,8 +46,9 @@ import {
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { PhotoEditor } from '@capawesome/capacitor-photo-editor';
+import { v4 as uuidv4 } from 'uuid';
 
-// Swiper-Importe
+// Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Zoom } from 'swiper/modules';
 import 'swiper/css';
@@ -121,19 +122,53 @@ async function deletePhoto() {
 
 async function editPhoto() {
   if (!currentPhoto.value) return;
+
+  const originalPhoto = currentPhoto.value;
+  const originalPath = originalPhoto.filepath;
+  const newFileName = `${uuidv4()}.jpeg`;
+
   try {
-    await PhotoEditor.editPhoto({
-      path: currentPhoto.value.filepath,
+    // 1. Copy the original file
+    const copiedFile = await Filesystem.copy({
+      from: originalPath,
+      to: newFileName,
+      toDirectory: Directory.Data,
     });
 
-    const swiperInstance = document.querySelector('.swiper-container') as any;
-    if (swiperInstance && swiperInstance.swiper) {
-      swiperInstance.swiper.update();
-    }
+    // 2. Edit the copy
+    await PhotoEditor.editPhoto({
+      path: copiedFile.uri,
+    });
+
+    // 3. Create a new photo entry for the edited version
+    const newPhoto: Photo = {
+      id: uuidv4(),
+      filepath: copiedFile.uri,
+      createdAt: Date.now(),
+    };
+
+    // 4. Load the current photo list, add the new photo, and save
+    const currentPhotos: Photo[] = JSON.parse(localStorage.getItem('photos') || '[]');
+    currentPhotos.unshift(newPhoto); // Add the new image at the beginning of the list
+    localStorage.setItem('photos', JSON.stringify(currentPhotos));
+
+    // 5. Navigate back to the gallery to see the update
+    router.push('/');
+
   } catch (error) {
-    console.error("Fehler beim Bearbeiten des Fotos:", error);
+    console.error("Error editing photo:", error);
+    // Optional: Delete the created copy if the editing fails
+    try {
+      await Filesystem.deleteFile({
+        path: newFileName,
+        directory: Directory.Data,
+      });
+    } catch (deleteError) {
+      console.error("Error deleting temporary copy:", deleteError);
+    }
   }
 }
+
 
 onMounted(loadPhotos);
 </script>
