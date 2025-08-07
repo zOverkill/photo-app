@@ -118,7 +118,7 @@ In Android Studio können Sie die App dann auf einem Emulator oder einem physisc
 │   ├── App.vue          # Haupt-Vue-Komponente
 │   └── main.ts          # Einstiegspunkt der Anwendung
 ├── tests/
-│   └── e2e/            # E2E-Tests (Cypress)
+│   └── e2e/             # E2E-Tests (Cypress)
 │   └── unit/            # Unit-Tests (Vitest)
 ├── capacitor.config.ts  # Capacitor-Konfiguration
 ├── ionic.config.json    # Ionic-Projektkonfiguration
