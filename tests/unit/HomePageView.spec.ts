@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import HomePageView from '@/views/HomePageView.vue';
 import { IonicVue } from '@ionic/vue';
 
-// ... (Mocks bleiben unverändert) ...
+
 vi.mock('@capacitor/camera', () => ({
     Camera: {
         requestPermissions: vi.fn().mockResolvedValue({ camera: 'granted', photos: 'granted' }),
@@ -45,7 +45,6 @@ describe('HomePageView.vue', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         localStorageMock = {};
-        // ANPASSUNG: Generische Signatur und Typ-Zusicherung innerhalb der Funktion
         vi.spyOn(window.localStorage.__proto__, 'setItem').mockImplementation((...args: unknown[]) => {
             const key = args[0] as string;
             const value = args[1] as string;

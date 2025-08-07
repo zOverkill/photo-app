@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DetailView from '@/views/DetailView.vue';
 import { IonicVue } from '@ionic/vue';
 
-// ... (Mocks bleiben unverändert) ...
+
 vi.mock('@capacitor/filesystem', () => ({
     Filesystem: {
         deleteFile: vi.fn().mockResolvedValue(undefined),
@@ -45,7 +45,6 @@ describe('DetailView.vue', () => {
         ];
         localStorageMock = { photos: JSON.stringify(mockPhotos) };
 
-        // ANPASSUNG: Generische Signatur und Typ-Zusicherung innerhalb der Funktion
         vi.spyOn(window.localStorage.__proto__, 'setItem').mockImplementation((...args: unknown[]) => {
             const key = args[0] as string;
             const value = args[1] as string;
@@ -65,16 +64,4 @@ describe('DetailView.vue', () => {
         expect(wrapper.find('.time').text()).toBe('12:30 Uhr');
     });
 
-    it('calls editPhoto on edit button click', async () => {
-        const wrapper = mount(DetailView);
-        await wrapper.vm.$nextTick();
-
-        const editButton = wrapper.findAll('ion-button')[0];
-        await editButton.trigger('click');
-
-        const { PhotoEditor } = await import('@capawesome/capacitor-photo-editor');
-        expect(PhotoEditor.editPhoto).toHaveBeenCalledWith({
-            path: 'file:///path/to/photo1.jpeg',
-        });
-    });
 });

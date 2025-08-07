@@ -72,6 +72,10 @@ Kompiliert und bündelt die App für die Produktion im `dist`-Verzeichnis.
 
 Führt die Unit-Tests mit Vitest aus.
 
+### `npm run test:e2e`
+
+Führt die End-to-End-Tests mit Cypress aus.
+
 ### `npm run lint`
 
 Überprüft den Code auf Linting-Fehler gemäß den ESLint-Regeln.
@@ -114,6 +118,7 @@ In Android Studio können Sie die App dann auf einem Emulator oder einem physisc
 │   ├── App.vue          # Haupt-Vue-Komponente
 │   └── main.ts          # Einstiegspunkt der Anwendung
 ├── tests/
+│   └── e2e/            # E2E-Tests (Cypress)
 │   └── unit/            # Unit-Tests (Vitest)
 ├── capacitor.config.ts  # Capacitor-Konfiguration
 ├── ionic.config.json    # Ionic-Projektkonfiguration
